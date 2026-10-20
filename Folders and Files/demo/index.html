@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GitHub Collapse Repo — demo</title>
+    <link rel="stylesheet" href="../content.css" />
+    <script>
+      // Dev helpers: ?expanded=1 starts expanded, ?theme=dark previews dark mode.
+      (() => {
+        const params = new URLSearchParams(location.search);
+        if (params.get("theme") === "dark") {
+          document.documentElement.dataset.theme = "dark";
+        }
+        if (params.has("expanded")) {
+          try {
+            localStorage.setItem("ghcr:collapsed", "0");
+          } catch {}
+        }
+        if (params.has("collapsed")) {
+          try {
+            localStorage.setItem("ghcr:collapsed", "1");
+          } catch {}
+        }
+      })();
+    </script>
+    <style>
+      :root {
+        color-scheme: light;
+        --bgColor-default: #ffffff;
+        --bgColor-muted: #f6f8fa;
+        --bgColor-inset: #f6f8fa;
+        --borderColor-default: #d1d9e0;
+        --borderColor-muted: #d1d9e0b3;
+        --fgColor-default: #1f2328;
+        --fgColor-muted: #59636e;
+        --fgColor-accent: #0969da;
+        --bgColor-neutral-muted: #818b981f;
+        --borderRadius-medium: 6px;
+        --focus-outlineColor: #0969da;
+      }
+
+      html[data-theme="dark"] {
+        color-scheme: dark;
+        --bgColor-default: #0d1117;
+        --bgColor-muted: #151b23;
+        --bgColor-inset: #010409;
+        --borderColor-default: #3d444d;
+        --borderColor-muted: #3d444db3;
+        --fgColor-default: #f0f6fc;
+        --fgColor-muted: #9198a1;
+        --fgColor-accent: #4493f8;
+        --bgColor-neutral-muted: #656c7633;
+        --focus-outlineColor: #1f6feb;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bgColor-default);
+        color: var(--fgColor-default);
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica,
+          Arial, sans-serif;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      a {
+        color: var(--fgColor-accent);
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        height: 62px;
+        padding: 0 32px;
+        border-bottom: 1px solid var(--borderColor-default);
+        background: var(--bgColor-muted);
+      }
+
+      .mark {
+        display: grid;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--fgColor-default);
+        color: var(--bgColor-default);
+        font-size: 18px;
+        font-weight: 700;
+        place-items: center;
+      }
+
+      .topbar input {
+        width: 300px;
+        padding: 5px 12px;
+        border: 1px solid var(--borderColor-default);
+        border-radius: 6px;
+        background: var(--bgColor-default);
+        color: inherit;
+        font: inherit;
+      }
+
+      .topbar .spacer {
+        flex: 1;
+      }
+
+      .theme-toggle {
+        padding: 5px 12px;
+        border: 1px solid var(--borderColor-default);
+        border-radius: 6px;
+        background: var(--bgColor-default);
+        color: var(--fgColor-default);
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .page {
+        max-width: 1216px;
+        margin: 0 auto;
+        padding: 24px 32px 56px;
+      }
+
+      .repo-name {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+        font-size: 20px;
+      }
+
+      .repo-name .slash {
+        color: var(--fgColor-muted);
+      }
+
+      .repo-name .badge {
+        padding: 0 7px;
+        border: 1px solid var(--borderColor-default);
+        border-radius: 2em;
+        color: var(--fgColor-muted);
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 18px;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+        border-bottom: 1px solid var(--borderColor-default);
+      }
+
+      .tab {
+        padding: 8px 8px 12px;
+        border-bottom: 2px solid transparent;
+        color: var(--fgColor-default);
+      }
+
+      .tab.active {
+        border-bottom-color: #fd8c73;
+        font-weight: 600;
+      }
+
+      .tab:hover {
+        border-bottom-color: var(--borderColor-default);
+        text-decoration: none;
+      }
+
+      /* Repo file box: toolbar + table, exactly like GitHub's split borders. */
+      .box-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 48px;
+        padding: 8px 16px;
+        border: 1px solid var(--borderColor-default);
+        border-radius: 6px 6px 0 0;
+        background: var(--bgColor-muted);
+      }
+
+      .branch {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border: 1px solid var(--borderColor-default);
+        border-radius: 6px;
+        background: var(--bgColor-default);
+        color: var(--fgColor-default);
+        font-weight: 600;
+      }
+
+      .ghost-button {
+        padding: 4px 10px;
+        border: 1px solid var(--borderColor-default);
+        border-radius: 6px;
+        background: var(--bgColor-muted);
+        color: var(--fgColor-default);
+        font: inherit;
+        font-weight: 500;
+      }
+
+      .toolbar-spacer {
+        flex: 1;
+      }
+
+      .file-table {
+        width: 100%;
+        border: 1px solid var(--borderColor-default);
+        border-top-width: 0;
+        border-radius: 0 0 6px 6px;
+        border-collapse: separate;
+        border-spacing: 0;
+        background: var(--bgColor-default);
+        font-size: 14px;
+      }
+
+      .file-table th {
+        padding: 8px 16px;
+        border-bottom: 1px solid var(--borderColor-default);
+        background: var(--bgColor-muted);
+        color: var(--fgColor-default);
+        font-weight: 600;
+        text-align: left;
+      }
+
+      .file-table td {
+        padding: 8px 16px;
+        border-bottom: 1px solid var(--borderColor-muted);
+        vertical-align: middle;
+      }
+
+      .file-table tbody tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .file-table tbody tr:hover {
+        background: var(--bgColor-muted);
+      }
+
+      .name-cell {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .name-cell svg {
+        flex: none;
+        color: var(--fgColor-muted);
+      }
+
+      .commit-cell {
+        color: var(--fgColor-muted);
+      }
+
+      .commit-cell strong {
+        color: var(--fgColor-default);
+        font-weight: 400;
+      }
+
+      .date-cell {
+        color: var(--fgColor-muted);
+        white-space: nowrap;
+      }
+
+      .readme-box {
+        margin-top: 24px;
+        border: 1px solid var(--borderColor-default);
+        border-radius: 6px;
+      }
+
+      .readme-tabs {
+        display: flex;
+        gap: 8px;
+        padding: 0 16px;
+        border-bottom: 1px solid var(--borderColor-default);
+      }
+
+      .readme-tab {
+        padding: 8px 8px 10px;
+        border-bottom: 2px solid transparent;
+        color: var(--fgColor-default);
+      }
+
+      .readme-tab.active {
+        border-bottom-color: #fd8c73;
+        font-weight: 600;
+      }
+
+      .readme-body {
+        padding: 24px 32px;
+      }
+
+      .readme-body h1 {
+        margin: 0 0 4px;
+        font-size: 24px;
+      }
+
+      .readme-body p {
+        margin: 8px 0;
+        color: var(--fgColor-muted);
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      @media (max-width: 720px) {
+        .topbar {
+          padding: 0 16px;
+        }
+
+        .topbar input,
+        .hide-sm {
+          display: none;
+        }
+
+        .page {
+          padding: 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="mark">G</div>
+      <input type="search" placeholder="Type / to search" aria-label="Search" />
+      <div class="spacer"></div>
+      <button class="theme-toggle" type="button" id="theme-toggle">Tema</button>
+    </header>
+
+    <main class="page">
+      <div class="repo-name">
+        <a href="#">funnietech</a><span class="slash">/</span>
+        <a href="#"><strong>github-collapse-repo</strong></a>
+        <span class="badge">Public</span>
+      </div>
+
+      <nav class="tabs">
+        <a class="tab active" href="#">Code</a>
+        <a class="tab" href="#">Issues</a>
+        <a class="tab" href="#">Pull requests</a>
+        <a class="tab" href="#">Actions</a>
+        <a class="tab" href="#">Projects</a>
+        <a class="tab" href="#">Wiki</a>
+      </nav>
+
+      <div class="box-toolbar">
+        <span class="branch">main ⌄</span>
+        <span class="toolbar-spacer"></span>
+        <button class="ghost-button" type="button">Go to file</button>
+        <button class="ghost-button" type="button">Add file ⌄</button>
+        <button class="ghost-button" type="button">&lt;&gt; Code ⌄</button>
+      </div>
+
+      <h2 class="sr-only" id="folders-and-files">Pastas e arquivos</h2>
+
+      <div data-testid="directory-content">
+        <table class="file-table" aria-labelledby="folders-and-files">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th class="hide-sm">Última mensagem de commit</th>
+              <th>Última atualização</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="react-directory-row">
+              <td>
+                <span class="name-cell">
+                  <svg class="octicon octicon-file-directory-fill" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M1.75 1A1.75 1.75 0 0 0 0 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0 0 16 13.25v-8.5A1.75 1.75 0 0 0 14.25 3H7.5a.25.25 0 0 1-.2-.1l-.9-1.2C6.07 1.26 5.55 1 5 1H1.75Z"></path></svg>
+                  <a href="#">src</a>
+                </span>
+              </td>
+              <td class="commit-cell"><strong>feat: adiciona barra de colapso</strong> · 2 dias atrás</td>
+              <td class="date-cell">2 dias atrás</td>
+            </tr>
+            <tr class="react-directory-row">
+              <td>
+                <span class="name-cell">
+                  <svg class="octicon octicon-file-directory-fill" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M1.75 1A1.75 1.75 0 0 0 0 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0 0 16 13.25v-8.5A1.75 1.75 0 0 0 14.25 3H7.5a.25.25 0 0 1-.2-.1l-.9-1.2C6.07 1.26 5.55 1 5 1H1.75Z"></path></svg>
+                  <a href="#">icons</a>
+                </span>
+              </td>
+              <td class="commit-cell"><strong>chore: ícones da extensão</strong> · 3 dias atrás</td>
+              <td class="date-cell">3 dias atrás</td>
+            </tr>
+            <tr class="react-directory-row">
+              <td>
+                <span class="name-cell">
+                  <svg class="octicon octicon-file-directory-fill" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M1.75 1A1.75 1.75 0 0 0 0 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0 0 16 13.25v-8.5A1.75 1.75 0 0 0 14.25 3H7.5a.25.25 0 0 1-.2-.1l-.9-1.2C6.07 1.26 5.55 1 5 1H1.75Z"></path></svg>
+                  <a href="#">scripts</a>
+                </span>
+              </td>
+              <td class="commit-cell"><strong>build: gera ícones</strong> · 3 dias atrás</td>
+              <td class="date-cell">3 dias atrás</td>
+            </tr>
+            <tr class="react-directory-row">
+              <td>
+                <span class="name-cell">
+                  <svg class="octicon octicon-file" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z"></path></svg>
+                  <a href="#">.gitignore</a>
+                </span>
+              </td>
+              <td class="commit-cell"><strong>Initial commit</strong> · 3 dias atrás</td>
+              <td class="date-cell">3 dias atrás</td>
+            </tr>
+            <tr class="react-directory-row">
+              <td>
+                <span class="name-cell">
+                  <svg class="octicon octicon-file" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z"></path></svg>
+                  <a href="#">README.md</a>
+                </span>
+              </td>
+              <td class="commit-cell"><strong>docs: explica a extensão</strong> · 1 dia atrás</td>
+              <td class="date-cell">1 dia atrás</td>
+            </tr>
+            <tr class="react-directory-row">
+              <td>
+                <span class="name-cell">
+                  <svg class="octicon octicon-file" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z"></path></svg>
+                  <a href="#">content.css</a>
+                </span>
+              </td>
+              <td class="commit-cell"><strong>style: barra de largura total</strong> · 2 dias atrás</td>
+              <td class="date-cell">2 dias atrás</td>
+            </tr>
+            <tr class="react-directory-row">
+              <td>
+                <span class="name-cell">
+                  <svg class="octicon octicon-file" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z"></path></svg>
+                  <a href="#">content.js</a>
+                </span>
+              </td>
+              <td class="commit-cell"><strong>feat: acordeão acessível</strong> · 2 dias atrás</td>
+              <td class="date-cell">2 dias atrás</td>
+            </tr>
+            <tr class="react-directory-row">
+              <td>
+                <span class="name-cell">
+                  <svg class="octicon octicon-file" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z"></path></svg>
+                  <a href="#">manifest.json</a>
+                </span>
+              </td>
+              <td class="commit-cell"><strong>chore: manifest v3</strong> · 3 dias atrás</td>
+              <td class="date-cell">3 dias atrás</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <section class="readme-box">
+        <div class="readme-tabs">
+          <span class="readme-tab active">README</span>
+          <span class="readme-tab">Licença</span>
+        </div>
+        <div class="readme-body">
+          <h1>GitHub Collapse Repo</h1>
+          <p>
+            Recolhe a lista de arquivos dos repositórios do GitHub em um
+            acordeão de largura total. Clique na barra para expandir de novo.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      document.getElementById("theme-toggle").addEventListener("click", () => {
+        const root = document.documentElement;
+        root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+      });
+    </script>
+    <script src="../content.js"></script>
+  </body>
+</html>

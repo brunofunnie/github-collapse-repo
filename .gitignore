@@ -1,0 +1,6 @@
+.DS_Store
+github-collapse-repo.zip
+dist/
+__pycache__/
+.serena/
+Folders and Files/docs/screenshot-*.png

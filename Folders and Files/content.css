@@ -1,0 +1,145 @@
+/* GitHub Collapse Repo
+ *
+ * The bar is deliberately styled with Primer design tokens (with light-mode
+ * fallbacks) so it follows GitHub's theme, including dark mode.
+ */
+
+/* Early/initial hide, before the content script has mounted the bar. */
+html.ghcr-collapsed [data-testid="directory-content"],
+html.ghcr-collapsed table[aria-labelledby="folders-and-files"] {
+  display: none !important;
+}
+
+/* Runtime collapsed state. */
+.ghcr-files--collapsed {
+  display: none !important;
+}
+
+.ghcr-toggle {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 40px;
+  margin: -1px 0 0;
+  padding: 8px 16px;
+  border: 1px solid var(--borderColor-default, #d1d9e0);
+  border-bottom: 0;
+  border-radius: 0;
+  background-color: var(--bgColor-muted, #f6f8fa);
+  box-shadow: none;
+  color: var(--fgColor-default, #1f2328);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: normal;
+  text-align: left;
+  text-decoration: none;
+  text-transform: none;
+  white-space: normal;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 120ms ease;
+}
+
+.ghcr-toggle:hover {
+  background-color: var(--bgColor-neutral-muted, rgba(175, 184, 193, 0.2));
+}
+
+.ghcr-toggle:active {
+  background-color: var(--bgColor-neutral-muted, rgba(175, 184, 193, 0.2));
+}
+
+.ghcr-toggle:focus-visible {
+  outline: 2px solid var(--focus-outlineColor, #0969da);
+  outline-offset: -2px;
+}
+
+/* Collapsed: the bar closes the card on its own. */
+.ghcr-toggle[aria-expanded="false"] {
+  border-bottom: 1px solid var(--borderColor-default, #d1d9e0);
+  border-radius: 0 0 var(--borderRadius-medium, 6px) var(--borderRadius-medium, 6px);
+}
+
+.ghcr-toggle__icon,
+.ghcr-toggle__chevron {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  color: var(--fgColor-muted, #59636e);
+}
+
+.ghcr-toggle__icon svg,
+.ghcr-toggle__chevron svg {
+  display: block;
+}
+
+.ghcr-toggle__label {
+  color: var(--fgColor-default, #1f2328);
+  font-weight: 600;
+}
+
+.ghcr-toggle__count {
+  overflow: hidden;
+  color: var(--fgColor-muted, #59636e);
+  font-size: 12px;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ghcr-toggle__count:empty {
+  display: none;
+}
+
+.ghcr-toggle__spacer {
+  flex: 1 1 auto;
+}
+
+.ghcr-toggle__action {
+  flex: none;
+  color: var(--fgColor-muted, #59636e);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+}
+
+.ghcr-toggle__chevron {
+  transition: transform 180ms ease;
+}
+
+.ghcr-toggle[aria-expanded="true"] .ghcr-toggle__chevron {
+  transform: rotate(180deg);
+}
+
+@media (max-width: 543px) {
+  .ghcr-toggle {
+    gap: 6px;
+    padding: 8px 12px;
+  }
+
+  .ghcr-toggle__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ghcr-toggle__action {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ghcr-toggle,
+  .ghcr-toggle__chevron {
+    transition: none;
+  }
+}
